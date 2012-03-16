@@ -4,6 +4,9 @@
 #include "proto.h"
 #include "pbc.h"
 
+/**
+ * Use to init a pbc env
+ */
 void _pbcB_init(struct pbc_env *);
 void _pbcB_register_fields(struct pbc_env *, pbc_array queue);
 

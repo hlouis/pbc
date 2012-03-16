@@ -25,39 +25,113 @@ struct pbc_slice {
 	int len;
 };
 
-struct pbc_pattern;
-struct pbc_env;
-struct pbc_rmessage;
-struct pbc_wmessage;
+struct pbc_pattern;		//!< use pattern api to read write message
+struct pbc_env;			//!< whole lib env
+struct pbc_rmessage;	//!< use to decode message
+struct pbc_wmessage;	//!< use to encode message
 
 struct pbc_env * pbc_new(void);
 void pbc_delete(struct pbc_env *);
+
+/**
+ * Register all proto in the slice
+ *
+ * This slice can contain a compiled pb file
+ */
 int pbc_register(struct pbc_env *, struct pbc_slice * slice);
+
+/**
+ * Get a field type in a message
+ * @param p pbc env
+ * @param typename message type name
+ * @param key field name
+ * @param type [ out ] this field name
+ * @return field type in PBC_type macro, return 0 if the message or field not exist
+ */
 int pbc_type(struct pbc_env *, const char * typename , const char * key , const char ** type);
+
+/**
+ * Get last error message in this env and reset it
+ * @return the error message
+ */
 const char * pbc_error(struct pbc_env *);
 
+//-------------------------------------------------------------------
 // message api
-
+/**
+ * Create a read message
+ * @param env the pbc env
+ * @param typename message type name
+ * @param slice contain the message encoded buff
+ * @return readable message structure or 0 for an error
+ */
 struct pbc_rmessage * pbc_rmessage_new(struct pbc_env * env, const char * typename , struct pbc_slice * slice);
 void pbc_rmessage_delete(struct pbc_rmessage *);
 
+/**
+ * Get an integer from the message ( number or enum id )
+ * @param key field name
+ * @param index if this field is repeat, use it as index
+ * @param hi if this field is 64bit integer this is high 32 bit value
+ * @return value
+ */
 uint32_t pbc_rmessage_integer(struct pbc_rmessage * , const char *key , int index, uint32_t *hi);
+
+/**
+ * Get real number from the message
+ * Same as above integer function
+ */
 double pbc_rmessage_real(struct pbc_rmessage * , const char *key , int index);
+
+/**
+ * Get string from the message ( or enum name )
+ * @param key field key
+ * @param index if this field is repeat, use it as index
+ * @param sz length of the returned string
+ * @return the string you want
+ */
 const char * pbc_rmessage_string(struct pbc_rmessage * , const char *key , int index, int *sz);
+
+/**
+ * Get sub message from the message
+ * Same as above
+ */
 struct pbc_rmessage * pbc_rmessage_message(struct pbc_rmessage *, const char *key, int index);
+/**
+ * Get repeated field size
+ * @return 0, this field is not set, 1 this field is nonrepeat or only one in it, > 1 how many value in this repeated field.
+ */
 int pbc_rmessage_size(struct pbc_rmessage *, const char *key);
+
+/**
+ * Get next field in this message
+ * @param key [ in/out ] current field name null for the first, out with next name, null if there is no next one.
+ * @return this field type in PBC_type macro format
+ */
 int pbc_rmessage_next(struct pbc_rmessage *, const char **key);
 
+/**
+ * Create a new write message for encode
+ * @param env the pbc env
+ * @param typename the message type name
+ * @return write message for encode
+ */
 struct pbc_wmessage * pbc_wmessage_new(struct pbc_env * env, const char *typename);
 void pbc_wmessage_delete(struct pbc_wmessage *);
 
-// for negative integer, pass -1 to hi
+/**
+ * Write integer to this message for negative integer, pass -1 to hi
+ * @param key target field name
+ * @param low low 32bit number
+ * @param hi high 32bit number, for negative pass -1
+ */
 void pbc_wmessage_integer(struct pbc_wmessage *, const char *key, uint32_t low, uint32_t hi);
 void pbc_wmessage_real(struct pbc_wmessage *, const char *key, double v);
 void pbc_wmessage_string(struct pbc_wmessage *, const char *key, const char * v, int len);
 struct pbc_wmessage * pbc_wmessage_message(struct pbc_wmessage *, const char *key);
 void * pbc_wmessage_buffer(struct pbc_wmessage *, struct pbc_slice * slice);
 
+//-------------------------------------------------------------------
 // array api 
 
 int pbc_array_size(pbc_array);
