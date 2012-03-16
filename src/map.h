@@ -1,10 +1,13 @@
 #ifndef PROTOBUF_C_MAP_H
 #define PROTOBUF_C_MAP_H
 
-struct map_ip;
-struct map_si;
-struct map_sp;
+struct map_ip;		//!< map with number key
+struct map_si;		//!< map with string key
+struct map_sp;		//!< map with string key and more iteration function
 
+/**
+ * map key value type
+ */
 struct map_kv {
 	int id;
 	void *pointer;

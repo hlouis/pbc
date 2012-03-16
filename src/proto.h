@@ -8,9 +8,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-struct map_ip;
-struct map_si;
-struct map_sp;
 struct _message;
 struct _enum;
 

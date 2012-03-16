@@ -1,8 +1,17 @@
 #ifndef PROTOBUF_C_VARINT_H
 #define PROTOBUF_C_VARINT_H
 
+/**
+ * varint module
+ *
+ * Use to encode and decode int32 and int64 with a little compress
+ */
+
 #include <stdint.h>
 
+/**
+ * Struct to hold int64
+ */
 struct longlong {
 	uint32_t low;
 	uint32_t hi;
