@@ -36,7 +36,7 @@ struct _field {
 };
 
 struct _message {
-	const char * key;
+	const char * key;	// type name
 	struct map_ip * id;	// id -> _field
 	struct map_sp * name;	// string -> _field
 	struct pbc_rmessage * def;	// default message
@@ -45,8 +45,8 @@ struct _message {
 
 struct _enum {
 	const char * key;
-	struct map_ip * id;
-	struct map_si * name;
+	struct map_ip * id;		//<! id -> name
+	struct map_si * name;	//<! name -> id
 	pbc_var default_v;
 };
 

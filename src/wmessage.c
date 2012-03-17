@@ -13,7 +13,7 @@
 #define WMESSAGE_SIZE 64
 
 struct pbc_wmessage {
-	struct _message *type;
+	struct _message *type;		//<! proto message type
 	uint8_t * buffer;
 	uint8_t * ptr;
 	uint8_t * endptr;

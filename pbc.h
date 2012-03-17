@@ -127,8 +127,27 @@ void pbc_wmessage_delete(struct pbc_wmessage *);
  */
 void pbc_wmessage_integer(struct pbc_wmessage *, const char *key, uint32_t low, uint32_t hi);
 void pbc_wmessage_real(struct pbc_wmessage *, const char *key, double v);
+
+/**
+ * Write string to this message
+ * @param v source string, buff will be copied
+ * @param len string length
+ */
 void pbc_wmessage_string(struct pbc_wmessage *, const char *key, const char * v, int len);
+
+/**
+ * Create a new message under this key
+ * @param key the field key name
+ * @return the sub message under this field
+ */
 struct pbc_wmessage * pbc_wmessage_message(struct pbc_wmessage *, const char *key);
+
+/**
+ * Write whole message into buffer
+ * @note the buffer return is alloced inside, and belong the wmessage if you destory the wmessage, this buffer you can't use it anymore.
+ * @param slice contain the output buffer and it's length
+ * @return it's the slice->buffer
+ */
 void * pbc_wmessage_buffer(struct pbc_wmessage *, struct pbc_slice * slice);
 
 //-------------------------------------------------------------------
@@ -143,12 +162,13 @@ void pbc_array_push_integer(pbc_array array, uint32_t low, uint32_t hi);
 void pbc_array_push_slice(pbc_array array, struct pbc_slice *);
 void pbc_array_push_real(pbc_array array, double v);
 
+//-------------------------------------------------------------------
+// pattern api
+
 struct pbc_pattern * pbc_pattern_new(struct pbc_env * , const char * message, const char *format, ...);
 void pbc_pattern_delete(struct pbc_pattern *);
-
 // return unused bytes , -1 for error
 int pbc_pattern_pack(struct pbc_pattern *, void *input, struct pbc_slice * s);
-
 // <0 for error
 int pbc_pattern_unpack(struct pbc_pattern *, struct pbc_slice * s , void * output);
 
