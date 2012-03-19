@@ -19,7 +19,7 @@ function lasterror()
 end
 
 local decode_type_cache = {}
-local _R_meta = {}
+local _R_meta = {}		-- metatable for rmessage
 
 function _R_meta:__index(key)
 	local v = decode_type_cache[self._CType][key](self._CObj, key)
@@ -186,6 +186,11 @@ function _R_metagc:__gc()
 	c._rmessage_delete(self._CObj)
 end
 
+--- Use to decode message from buffer
+-- @param message string for message type name
+-- @param buffer string or userdata( slice.buffer ) contain the message buffer
+-- @param length integer how many bytes in this buffer
+-- @return the read message instance
 function decode( message , buffer, length)
 	local rmessage = c._rmessage_new(P, message, buffer, length)
 	if rmessage then
@@ -197,16 +202,22 @@ function decode( message , buffer, length)
 	end
 end
 
+--- Delete the decoder( the read message instance )
+-- @param self the decoder
 function close_decoder(self)
 	c._rmessage_delete(self._CObj)
 	self._CObj = nil
 	setmetatable(self,nil)
 end
 
+--- Register pb buffer to pbc
+-- @param buffer string the pb buffer
 function register( buffer)
 	c._env_register(P, buffer)
 end
 
+--- Register a pb file to pbc
+-- @param filename the pb file name
 function register_file(filename)
 	local f = assert(io.open(filename , "rb"))
 	local buffer = f:read "*a"
@@ -218,6 +229,8 @@ end
 
 local encode_type_cache = {}
 
+--- Encode, write message with a lua table
+--
 local function encode_message(CObj, message_type, t)
 	local type = encode_type_cache[message_type]
 	for k,v in pairs(t) do
@@ -334,6 +347,11 @@ setmetatable(encode_type_cache , {
 	end
 })
 
+--- Encode, write a message with a table
+-- @param message string the message type name
+-- @param t table contain all this message data
+-- @param func [ opt ] function set to callback and handle the encoded buffer
+-- @return string if there is no callback func, return encoded buffer as string
 function encode( message, t , func)
 	local encoder = c._wmessage_new(P, message)
 	assert(encoder ,  message)

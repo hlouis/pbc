@@ -44,9 +44,9 @@ int pbc_register(struct pbc_env *, struct pbc_slice * slice);
  * Get a field type in a message
  * @param p pbc env
  * @param typename message type name
- * @param key field name
+ * @param key field name, can be null
  * @param type [ out ] this field name
- * @return field type in PBC_type macro, return 0 if the message or field not exist
+ * @return field type in PBC_type macro, return 0 if the message or field not exist, if key is null, if the field type is exist return -1 otherwise return 0
  */
 int pbc_type(struct pbc_env *, const char * typename , const char * key , const char ** type);
 
