@@ -52,7 +52,7 @@ function _reader:message(key, message_type)
 			_CObj = rmessage,
 			_CType = message_type,
 		}
-		return setmetatable( v , _R_meta )
+		return setmetatable( v , _R_meta )	-- sub message do not need gc
 	end
 end
 
@@ -108,7 +108,7 @@ function _reader:message_repeated(key, message_type)
 			_CObj = c._rmessage_message(self , key , i),
 			_CType = message_type,
 		}
-		table.insert(ret, setmetatable( m , _R_meta ))
+		table.insert(ret, setmetatable( m , _R_meta ))	-- sub message do not need gc
 	end
 	return ret
 end
@@ -198,7 +198,7 @@ function decode( message , buffer, length)
 			_CObj = rmessage,
 			_CType = message,
 		}
-		return setmetatable( self , _R_metagc )
+		return setmetatable( self , _R_metagc ) -- use gc able metatable
 	end
 end
 
