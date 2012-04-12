@@ -6,6 +6,7 @@ addr:close()
 
 protobuf.register(buffer)
 
+-- use FileDescriptorSet to get proto info
 t = protobuf.decode("google.protobuf.FileDescriptorSet", buffer)
 
 proto = t.file[1]

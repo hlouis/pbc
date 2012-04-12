@@ -1,5 +1,6 @@
 CC = gcc
 CFLAGS = -g3
+#CFLAGS = -O2 -Wall
 AR = ar rc
 
 BUILD = build

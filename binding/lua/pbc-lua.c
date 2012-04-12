@@ -668,8 +668,8 @@ _pattern_pack(lua_State *L) {
 		}
 	}
 
-	luaL_Buffer b;
-	luaL_buffinit(L, &b);
+	/*luaL_Buffer b;*/
+	/*luaL_buffinit(L, &b);*/
 
 	int cap = 128;
 	for (;;) {
