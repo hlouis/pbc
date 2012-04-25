@@ -250,6 +250,7 @@ local _R_metagc = {
 	__index = _R_meta.__index
 }
 
+--- Use delete_all will clean all submessage
 _R_metagc.__gc = assert(delete_all)
 
 --- Use to decode message from buffer
