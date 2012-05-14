@@ -258,7 +258,7 @@ _R_metagc.__gc = assert(delete_all)
 -- @param buffer string or userdata( slice.buffer ) contain the message buffer
 -- @param length integer how many bytes in this buffer
 -- @return the read message instance
-function decode( message , buffer, length)
+local function decode_message( message , buffer, length)
 	local rmessage = c._rmessage_new(P, message, buffer, length)
 	if rmessage then
 		local self = {
@@ -269,7 +269,7 @@ function decode( message , buffer, length)
 	end
 end
 
-close_decoder = assert(delete_all)
+--close_decoder = assert(delete_all)
 
 --- Register pb buffer to pbc
 -- @param buffer string the pb buffer
@@ -538,24 +538,52 @@ function check(typename , field)
 	end
 end
 
-local function _next(obj, prev)
-	return c._rmessage_nextkey(obj, prev)
-end
+--------------
 
-function key(msg)
-	return _next, msg._CObj , nil
-end
+local default_cache = setmetatable({} , {__mode = "kv"})
 
-local function _next_pairs(msg, prev)
-	local key, t = c._rmessage_nextkey(msg._CObj, prev)
-	if key == nil then
-		return
+local function default_table(typename)
+	local v = default_cache[typename]
+	if v then
+		return v
 	end
-	return key, msg[key]
+
+	v = { __index = assert(decode_message(typename , "")) }
+
+	default_cache[typename]  = v
+	return v
 end
 
-function _R_meta:__pairs()
-	return _next_pairs , self , nil
+local decode_message_mt = {}
+
+local function decode_message(typename, buffer)
+	return setmetatable ( { typename, buffer } , decode_message_mt)
 end
 
-_R_metagc.__pairs = _R_meta.__pairs
+function decode(typename, buffer, length)
+	local ret = {}
+	local ok = c._decode(P, decode_message , ret , typename, buffer, length)
+	if ok then
+		return setmetatable(ret , default_table(typename))
+	else
+		return false , c._last_error(P)
+	end
+end
+
+local function expand(tbl)
+	local typename = rawget(tbl , 1)
+	local buffer = rawget(tbl , 2)
+	tbl[1] , tbl[2] = nil , nil
+	assert(c._decode(P, decode_message , tbl , typename, buffer), typename)
+	setmetatable(tbl , default_table(typename))
+end
+
+function decode_message_mt.__index(tbl, key)
+	expand(tbl)
+	return tbl[key]
+end
+
+function decode_message_mt.__pairs(tbl)
+	expand(tbl)
+	return pairs(tbl)
+end

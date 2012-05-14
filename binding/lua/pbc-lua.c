@@ -86,21 +86,6 @@ _rmessage_new(lua_State *L) {
 }
 
 static int
-_rmessage_nextkey(lua_State *L) {
-	struct pbc_rmessage * m = checkuserdata(L,1);
-	const char *key = NULL;
-	if (lua_isstring(L,2)) {
-		key = lua_tostring(L,2);
-	}
-	int t = pbc_rmessage_next(m, &key);
-	if (key == NULL)
-		return 0;
-	lua_pushstring(L,key);
-	lua_pushinteger(L,t);
-	return 2;
-}
-
-static int
 _rmessage_delete(lua_State *L) {
 	struct pbc_rmessage * m = checkuserdata(L,1);
 	pbc_rmessage_delete(m);
@@ -837,6 +822,131 @@ _pattern_size(lua_State *L) {
 	return 1;
 }
 
+/*
+	-3 table key
+	-2 table id
+	-1 value
+ */
+static void
+new_array(lua_State *L, int id, const char *key) {
+	lua_rawgeti(L, -2 , id);
+	if (lua_isnil(L, -1)) {
+		lua_pop(L,1);
+		lua_newtable(L);  // table.key table.id value array
+		lua_pushvalue(L,-1);
+		lua_pushvalue(L,-1); // table.key table.id value array array array
+		lua_setfield(L, -6 , key);
+		lua_rawseti(L, -4, id);
+	}
+}
+
+static void
+push_value(lua_State *L, int type, const char * typename, union pbc_value *v) {
+	switch(type) {
+	case PBC_INT:
+		lua_pushinteger(L, (int)v->i.low);
+		break;
+	case PBC_REAL:
+		lua_pushnumber(L, v->f);
+		break;
+	case PBC_BOOL:
+		lua_pushboolean(L, v->i.low);
+		break;
+	case PBC_ENUM:
+		lua_pushstring(L, v->e.name);
+		break;
+	case PBC_BYTES:
+	case PBC_STRING:
+		lua_pushlstring(L, (const char *)v->s.buffer , v->s.len);
+		break;
+	case PBC_MESSAGE:
+		lua_pushvalue(L, -3);
+		lua_pushstring(L, typename);
+		lua_pushlstring(L, (const char *)v->s.buffer , v->s.len);
+		lua_call(L, 2 , 1);
+		break;
+	case PBC_FIXED64:
+		lua_pushlstring(L, (const char *)&(v->i), 8);
+		break;
+	case PBC_FIXED32:
+		lua_pushlightuserdata(L,(void *)(intptr_t)v->i.low);
+		break;
+	case PBC_INT64: {
+		uint64_t v64 = (uint64_t)(v->i.hi) << 32 | (uint64_t)(v->i.low);
+		lua_pushnumber(L,(lua_Number)(int64_t)v64);
+		break;
+	}
+	case PBC_UINT: {
+		uint64_t v64 = (uint64_t)(v->i.hi) << 32 | (uint64_t)(v->i.low);
+		lua_pushnumber(L,(lua_Number)v64);
+		break;
+	}
+	default:
+		luaL_error(L, "Unknown type %s", typename);
+		break;
+	}
+}
+
+/*
+	-3: function decode
+	-2: table key
+	-1:	table id
+ */
+static void
+decode_cb(void *ud, int type, const char * typename, union pbc_value *v, int id, const char *key) {
+	lua_State *L = ud;
+	if (type & PBC_REPEATED) {
+		push_value(L, type & ~PBC_REPEATED, typename, v);
+		new_array(L, id , key);	// func.decode table.key table.id value array
+		int n = lua_rawlen(L,-1);
+		lua_insert(L, -2);	// func.decode table.key table.id array value
+		lua_rawseti(L, -2 , n+1);	// func.decode table.key table.id array
+		lua_pop(L,1);
+	} else {
+		push_value(L, type, typename, v);
+		lua_setfield(L, -3 , key);
+	}
+}
+
+/*
+	:1 lightuserdata env
+	:2 function decode_message
+	:3 table target
+	:4 string type
+	:5 string data
+	:5 lightuserdata pointer
+	:6 integer len
+
+	table
+ */
+static int
+_decode(lua_State *L) {
+	struct pbc_env * env = checkuserdata(L,1);
+	luaL_checktype(L, 2 , LUA_TFUNCTION);
+	luaL_checktype(L, 3 , LUA_TTABLE);
+	const char * type = luaL_checkstring(L,4);
+	struct pbc_slice slice;
+	if (lua_type(L,5) == LUA_TSTRING) {
+		size_t len;
+		slice.buffer = (void *)luaL_checklstring(L,5,&len);
+		slice.len = (int)len;
+	} else {
+		slice.buffer = checkuserdata(L,5);
+		slice.len = luaL_checkinteger(L,6);
+	}
+	lua_pushvalue(L, 2);
+	lua_pushvalue(L, 3);
+	lua_newtable(L);
+
+	int n = pbc_decode(env, type, &slice, decode_cb, L);
+	if (n<0) {
+		lua_pushboolean(L,0);
+	} else {
+		lua_pushboolean(L,1);
+	}
+	return 1;
+}
+
 int
 luaopen_protobuf_c(lua_State *L) {
 	luaL_Reg reg[] = {
@@ -844,7 +954,6 @@ luaopen_protobuf_c(lua_State *L) {
 		{"_env_delete" , _env_delete },
 		{"_env_register" , _env_register },
 		{"_env_type", _env_type },
-		{"_rmessage_nextkey", _rmessage_nextkey },
 		{"_rmessage_new" , _rmessage_new },
 		{"_rmessage_delete" , _rmessage_delete },
 		{"_rmessage_integer" , _rmessage_integer },
@@ -874,6 +983,7 @@ luaopen_protobuf_c(lua_State *L) {
 		{"_pattern_unpack", _pattern_unpack },
 		{"_pattern_pack", _pattern_pack },
 		{"_last_error", _last_error },
+		{"_decode", _decode },
 		{NULL,NULL},
 	};
 
