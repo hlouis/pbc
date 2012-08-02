@@ -269,7 +269,10 @@ _wmessage_string(lua_State *L) {
 	const char * key = luaL_checkstring(L,2);
 	size_t len = 0;
 	const char * v = luaL_checklstring(L,3,&len);
-	pbc_wmessage_string(m, key, v, (int)len);
+	int err = pbc_wmessage_string(m, key, v, (int)len);
+	if (err) {
+		return luaL_error(L, "Invalid enum %s", v);
+	}
 
 	return 0;
 }
@@ -311,7 +314,7 @@ _wmessage_int64(lua_State *L) {
 		pbc_wmessage_integer(m, key, v[0] , v[1]);
 		break;
 	}
-	case LUA_TUSERDATA : {
+	case LUA_TLIGHTUSERDATA : {
 		void * v = lua_touserdata(L,3);
 		uint64_t v64 = (uintptr_t)v;
 		pbc_wmessage_integer(m, key, (uint32_t)v64 , (uint32_t)(v64>>32));

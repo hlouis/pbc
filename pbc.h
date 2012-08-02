@@ -145,15 +145,15 @@ void pbc_wmessage_delete(struct pbc_wmessage *);
  * @param low low 32bit number
  * @param hi high 32bit number, for negative pass -1
  */
-void pbc_wmessage_integer(struct pbc_wmessage *, const char *key, uint32_t low, uint32_t hi);
-void pbc_wmessage_real(struct pbc_wmessage *, const char *key, double v);
+int pbc_wmessage_integer(struct pbc_wmessage *, const char *key, uint32_t low, uint32_t hi);
+int pbc_wmessage_real(struct pbc_wmessage *, const char *key, double v);
 
 /**
  * Write string to this message
  * @param v source string, buff will be copied
  * @param len string length
  */
-void pbc_wmessage_string(struct pbc_wmessage *, const char *key, const char * v, int len);
+int pbc_wmessage_string(struct pbc_wmessage *, const char *key, const char * v, int len);
 
 /**
  * Create a new message under this key
