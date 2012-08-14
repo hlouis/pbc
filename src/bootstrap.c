@@ -141,6 +141,7 @@ set_msg_one(struct pbc_pattern * FIELD_T, struct pbc_env *p, struct file_t *file
 		f.type_name.n = field.type_name.buffer;
 		set_default(&f, &field);
 
+		/*printf("MSGONE: %s\n", f.name);*/
 		_pbcP_push_message(p,name, &f , queue);
 
 		// don't need to close pattern since no array
@@ -168,21 +169,21 @@ set_field_one(struct pbc_env *p, struct _field *f) {
 	const char * type_name = f->type_name.n;
 	if (f->type == PTYPE_MESSAGE) {
 		f->type_name.m  = _pbcM_sp_query(p->msgs, type_name);
-//		printf("MESSAGE: %s %p\n",type_name, f->type_name.m);
+		/*printf("MESSAGE: %s %p\n",type_name, f->type_name.m);*/
 	} else if (f->type == PTYPE_ENUM) {
 		f->type_name.e = _pbcM_sp_query(p->enums, type_name);
-//		printf("ENUM: %s %p ",type_name, f->type_name.e);
+		/*printf("ENUM: %s %p ",type_name, f->type_name.e);*/
 		const char * str = f->default_v->s.str;
 		if (str && str[0]) {
 			int err = _pbcM_si_query(f->type_name.e->name, str , &(f->default_v->e.id));
 			if (err < 0)
 				goto _default;
 			f->default_v->e.name = _pbcM_ip_query(f->type_name.e->id, f->default_v->e.id);
-//			printf("[%s %d]\n",str,f->default_v->e.id);
+			/*printf("[%s %d]\n",str,f->default_v->e.id);*/
 		} else {
 _default:
 			memcpy(f->default_v, f->type_name.e->default_v, sizeof(pbc_var));
-//			printf("(%s %d)\n",f->default_v->e.name,f->default_v->e.id);
+			/*printf("(%s %d)\n",f->default_v->e.name,f->default_v->e.id);*/
 		}
 	}
 }

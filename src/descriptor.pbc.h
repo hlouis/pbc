@@ -1,3 +1,10 @@
+/**
+ * This is binary pb data for proto descriptor proto file.
+ *
+ * proto文件的解析有一个先有鸡还是先有蛋的问题，因为，他是使用
+ * 一个proto的定义去解析其他所有的proto文件的，这个就是 descriptor.proto
+ * 所以为了可以解析其他的pb文件，我们把 descriptor.proto 的pb内容dump在这里
+ */
 static unsigned char pbc_descriptor[] = {
 72,1,72,2,72,3,72,4,72,5,72,6,72,7,72,8,
 72,9,72,10,72,11,72,12,72,13,72,14,72,15,72,16,

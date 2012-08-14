@@ -37,7 +37,7 @@ struct pbc_env * pbc_new(void);
 void pbc_delete(struct pbc_env *);
 
 /**
- * Register all proto in the slice
+ * Register all proto in the slice to the pbc_env
  *
  * This slice can contain a compiled pb file
  */

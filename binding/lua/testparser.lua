@@ -9,7 +9,7 @@ addressbook = {
 	phone = {
 		{ number = "1301234567" },
 		{ number = "87654321", type = "WORK" },
-	}
+	},
 }
 
 code = protobuf.encode("tutorial.Person", addressbook)
