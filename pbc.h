@@ -59,7 +59,6 @@ int pbc_type(struct pbc_env *, const char * typename , const char * key , const 
  */
 const char * pbc_error(struct pbc_env *);
 
-// callback api
 union pbc_value {
 	struct {
 		uint32_t low;
@@ -73,7 +72,24 @@ union pbc_value {
 	} e;
 };
 
+/**
+ * callback function for each field in the pb
+ * @param ud user data, you can pass anything in pbc_decode function
+ * @param type this unknown field type number
+ * @param typename this unknown field type name
+ * @param v this field's value
+ * @param key this is the field name
+ */
 typedef void (*pbc_decoder)(void *ud, int type, const char * typename, union pbc_value *v, int id, const char *key);
+
+/**
+ * Function use to decode a pb file, this is only a helper function
+ * @apram env pbc env
+ * @param typename this proto buffer's type name
+ * @param slice contain the buffer to parse
+ * @param f callback decode function
+ * @param ud user data
+ */
 int pbc_decode(struct pbc_env * env, const char * typename , struct pbc_slice * slice, pbc_decoder f, void *ud);
 
 //-------------------------------------------------------------------
