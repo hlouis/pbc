@@ -1,4 +1,5 @@
 local c = require "protobuf.c"
+
 local setmetatable = setmetatable
 local type = type
 local table = table
@@ -15,18 +16,9 @@ module "protobuf"
 
 local _pattern_cache = {}
 
-local function clear_pat()
-	for _,v in pairs(_pattern_cache) do
-		c._pattern_delete(v.CObj)
-	end
-end
-
+-- skynet clear
 local P = c._env_new()
-setmetatable(_M , {
-	__gc = function(t)
-		clear_pat()
-		c._env_delete(P)
-	end })
+local GC = c._gc()
 
 function lasterror()
 	return c._last_error(P)
@@ -39,31 +31,6 @@ function _R_meta:__index(key)
 	local v = decode_type_cache[self._CType][key](self, key)
 	self[key] = v
 	return v
-end
-
-local function link_parent(self, parent)
-	local link = rawget(parent, _Children)
-	if link == nil then
-		link = {}
-		rawset(parent, "_Children" , link)
-	end
-	tinsert(link, self)
-end
-
-local function remove_cobj(self)
-	self._CObj = nil
-	setmetatable(self, nil)
-	local children = self._Children
-	if children then
-		for _,v in ipairs(children) do
-			remove_cobj(v)
-		end
-	end
-end
-
-local function delete_all(self)
-	c._rmessage_delete(self._CObj)
-	remove_cobj(self)
 end
 
 local _reader = {}
@@ -258,18 +225,6 @@ setmetatable(decode_type_cache , {
 	end
 })
 
-local _R_metagc = {
-	__index = _R_meta.__index
-}
-
---- Use delete_all will clean all submessage
-_R_metagc.__gc = assert(delete_all)
-
---- Use to decode message from buffer
--- @param message string for message type name
--- @param buffer string or userdata( slice.buffer ) contain the message buffer
--- @param length integer how many bytes in this buffer
--- @return the read message instance
 local function decode_message( message , buffer, length)
 	local rmessage = c._rmessage_new(P, message, buffer, length)
 	if rmessage then
@@ -277,25 +232,9 @@ local function decode_message( message , buffer, length)
 			_CObj = rmessage,
 			_CType = message,
 		}
-		return setmetatable( self , _R_metagc ) -- use gc able metatable
+		c._add_rmessage(GC,rmessage)
+		return setmetatable( self , _R_meta )
 	end
-end
-
---close_decoder = assert(delete_all)
-
---- Register pb buffer to pbc
--- @param buffer string the pb buffer
-function register( buffer)
-	c._env_register(P, buffer)
-end
-
---- Register a pb file to pbc
--- @param filename the pb file name
-function register_file(filename)
-	local f = assert(io.open(filename , "rb"))
-	local buffer = f:read "*a"
-	c._env_register(P, buffer)
-	f:close()
 end
 
 ----------- encode ----------------
@@ -443,14 +382,15 @@ setmetatable(encode_type_cache , {
 -- @param t table contain all this message data
 -- @param func [ opt ] function set to callback and handle the encoded buffer
 -- @return string if there is no callback func, return encoded buffer as string
-function encode( message, t , func)
+function encode( message, t , func , ...)
 	local encoder = c._wmessage_new(P, message)
 	assert(encoder ,  message)
 	encode_message(encoder, message, t)
 	if func then
 		local buffer, len = c._wmessage_buffer(encoder)
-		func(buffer, len)
+		local ret = func(buffer, len, ...)
 		c._wmessage_delete(encoder)
+		return ret
 	else
 		local s = c._wmessage_buffer_string(encoder)
 		c._wmessage_delete(encoder)
@@ -503,6 +443,7 @@ local function _pattern_create(pattern)
 	if cobj == nil then
 		return
 	end
+	c._add_pattern(GC, cobj)
 	local pat = {
 		CObj = cobj,
 		format = table.concat(lua),
@@ -542,6 +483,8 @@ end
 --------------
 
 local default_cache = setmetatable({} , {__mode = "kv"})
+
+-- todo : clear default_cache, v._CObj
 
 local function default_table(typename)
 	local v = default_cache[typename]
@@ -605,5 +548,15 @@ local function set_default(typename, tbl)
 	return setmetatable(tbl , default_table(typename))
 end
 
+function register( buffer)
+	c._env_register(P, buffer)
+end
+
+function register_file(filename)
+	local f = assert(io.open(filename , "rb"))
+	local buffer = f:read "*a"
+	c._env_register(P, buffer)
+	f:close()
+end
 
 default=set_default
